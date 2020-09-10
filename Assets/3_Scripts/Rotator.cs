@@ -4,13 +4,11 @@ using UnityEngine;
 
 public class Rotator : MonoBehaviour
 {
-    void Start()
-    {
-        
-    }
+    public Vector3 rotateSpeed;
+
 
     void Update()
     {
-        transform.Rotate(60 * Time.deltaTime, 60 * Time.deltaTime, 60 * Time.deltaTime);
+        transform.Rotate(rotateSpeed * Time.deltaTime);
     }
 }

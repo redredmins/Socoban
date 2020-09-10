@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour
     public MoveableProp player;       // - 씬 위에 하나 있고, 위치만 변경
 
     List<MoveableProp> itemBoxs;
+    Dictionary<Vector3, GameObject> goalDic;
 
 
 
@@ -40,6 +41,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         itemBoxs = new List<MoveableProp>();
+        goalDic = new Dictionary<Vector3, GameObject>();
 
         for(int z = 0; z < stage.Length; ++z)
         {
@@ -64,7 +66,8 @@ public class GameManager : MonoBehaviour
                         break;
 
                     case 'G':
-                        LeavePropOnStage(goalPrefab, x, z);
+                        GameObject goalObj = LeavePropOnStage(goalPrefab, x, z);
+                        goalDic.Add(new Vector3(x, 0, z), goalObj);
                         break;
                 }
             }
@@ -115,17 +118,46 @@ public class GameManager : MonoBehaviour
                 int nextX = (int)(moveX + dir.x);
                 int nextZ = (int)(moveZ - dir.z);
                 char nextItem = stage[nextZ][nextX];
-                if ((nextItem == 'W' || nextItem == 'I') == false)
+                if ((nextItem == 'W' || nextItem == 'I') == false) // 플레이어가 아이템을 밀 수 있음
                 {
-                    stage[moveZ][moveX] = 'P';
-                    stage[nextZ][nextX] = 'I';
-                    player.Move(dir);
-                    foreach(var i in itemBoxs)
+                    if (nextItem != 'G')
                     {
-                        if (i.myPos.x == moveX && i.myPos.z == moveZ)
+                        stage[moveZ][moveX] = 'P';
+                        stage[nextZ][nextX] = 'I';
+                        player.Move(dir);
+                        foreach(MoveableProp i in itemBoxs)
                         {
-                            i.Move(dir);
+                            if (i.myPos.x == moveX && i.myPos.z == moveZ)
+                            {
+                                i.Move(dir);
+                            }
                         }
+                    }
+                    else
+                    {
+                        stage[moveZ][moveX] = 'P';
+                        stage[nextZ][nextX] = '.';
+                        player.Move(dir);
+
+                        foreach(MoveableProp item in itemBoxs)
+                        {
+                            //Debug.Log(item.gameObject.name + " 222");
+                            //Debug.Log("item.myPos : " + item.myPos.x + ", " + item.myPos.z);
+                            //Debug.Log("move : " + moveX + ", " + moveZ);
+                            if (item.myPos.x == moveX && item.myPos.z == moveZ)
+                            {
+                                Debug.Log(item.gameObject.name);
+                                item.gameObject.SetActive(false);
+                            }
+                        }
+
+                        Vector3 goalKey = new Vector3(nextX, 0, nextZ);
+                        if (goalDic.ContainsKey(goalKey) == true)
+                        {
+                            goalDic[goalKey].SetActive(false);
+                        }
+                        else
+                            Debug.LogError("Goal 오브젝트가 없다니!!!");
                     }
                 }
                 break;
