@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    // 한 칸씩 움직이는 소코반
+
     // 가변 배열
     char[][] stage = new char[10][]
     {
@@ -28,13 +30,17 @@ public class GameManager : MonoBehaviour
     public GameObject itemBoxPrefab;// 2
     public GameObject goalPrefab;   // 3 프리팹을 복제해서 사용
 
-    public Player2 player;       // - 씬 위에 하나 있고, 위치만 변경
+    public MoveableProp player;       // - 씬 위에 하나 있고, 위치만 변경
+
+    List<MoveableProp> itemBoxs;
 
 
 
 
     void Start()
     {
+        itemBoxs = new List<MoveableProp>();
+
         for(int z = 0; z < stage.Length; ++z)
         {
             for(int x = 0; x < stage[z].Length; ++x)
@@ -43,7 +49,7 @@ public class GameManager : MonoBehaviour
                 {
                     case 'P':
                         SetPropPosition(player.gameObject, x, z);
-                        player.InitPlayer(x, z);
+                        player.Init(x, z);
                         break;
 
                     case 'W': // if (stage[z][x] == 'W') 와 같은 의미
@@ -51,7 +57,10 @@ public class GameManager : MonoBehaviour
                         break;
 
                     case 'I':
-                        LeavePropOnStage(itemBoxPrefab, x, z);
+                        GameObject item = LeavePropOnStage(itemBoxPrefab, x, z);
+                        MoveableProp moveableItem = item.GetComponent<MoveableProp>();
+                        moveableItem.Init(x, z);
+                        itemBoxs.Add(moveableItem);
                         break;
 
                     case 'G':
@@ -67,30 +76,75 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.UpArrow) == true)
         {
-            // 플레이어 위치 : [5][5]
-            // 플레이어의 위 : [4][5]
+            Vector3 upVector = new Vector3(0f, 0f, 1f);
+            MovePlayer(upVector);
+        }
 
-            Vector3 upVoctor = new Vector3(0f, 0f, 1f);
-            int upZ = (int)(player.myPos.z - upVoctor.z);
-            int upX = (int)(player.myPos.x);
-            Debug.Log("UP x : " + upX + ", z : " + upZ);
-            char upProp = stage[upZ][upX];
+        if (Input.GetKeyDown(KeyCode.DownArrow) == true)
+        {
+            Vector3 downVector = new Vector3(0f, 0f, -1f);
+            MovePlayer(downVector);
+        }
 
-            if (upProp == 'W') return;
-            else
-            {
-                player.Move(upVoctor);
-            }
+        if (Input.GetKeyDown(KeyCode.LeftArrow) == true)
+        {
+            Vector3 leftVector = new Vector3(-1f, 0f, 0f);
+            MovePlayer(leftVector);
+        }
 
+        if (Input.GetKeyDown(KeyCode.RightArrow) == true)
+        {
+            Vector3 rightVector = new Vector3(1f, 0f, 0f);
+            MovePlayer(rightVector);
         }
 
     }
 
-    void LeavePropOnStage(GameObject propPrefab, int x, int z)
+    void MovePlayer(Vector3 dir)
+    {
+        int moveZ = (int)(player.myPos.z - dir.z);
+        int moveX = (int)(player.myPos.x + dir.x);
+        char destination = stage[moveZ][moveX];
+        
+        switch(destination)
+        {
+            case 'W':
+                break;
+
+            case 'I':
+                int nextX = (int)(moveX + dir.x);
+                int nextZ = (int)(moveZ - dir.z);
+                char nextItem = stage[nextZ][nextX];
+                if ((nextItem == 'W' || nextItem == 'I') == false)
+                {
+                    stage[moveZ][moveX] = 'P';
+                    stage[nextZ][nextX] = 'I';
+                    player.Move(dir);
+                    foreach(var i in itemBoxs)
+                    {
+                        if (i.myPos.x == moveX && i.myPos.z == moveZ)
+                        {
+                            i.Move(dir);
+                        }
+                    }
+                }
+                break;
+
+            case '.':
+            case 'P':
+            case 'G':
+                player.Move(dir);
+                break;
+        }
+    }
+
+    GameObject LeavePropOnStage(GameObject propPrefab, int x, int z)
     {
         GameObject obj = Instantiate(propPrefab, stageTransform);
 
         SetPropPosition(obj, x, z);
+
+        return obj;
     }
 
     void SetPropPosition(GameObject prop, int x, int z)
@@ -100,4 +154,36 @@ public class GameManager : MonoBehaviour
         prop.transform.localPosition = newPos - correction - new Vector3(-0.5f, 0f, 0.5f);
     }
 
+    /*
+    int nextX = moveX + (int)dir.x;
+    int nextZ = moveZ - (int)dir.z;
+    char nextMove = stage[nextZ][nextX];
+    if ((nextMove == 'W' || nextMove == 'I') == false)
+    {
+        stage[moveZ][moveX] = 'P';
+        stage[nextZ][nextX] = 'I';
+        MoveableProp ms = GetMoveableProp(moveX, moveZ);
+        Debug.Log(ms.gameObject.name);
+        ms.Move(dir);
+        player.Move(dir);
+    }
+
+    MoveableProp GetMoveableProp(int x, int z)
+    {
+        Debug.Log("item : " + x + ", " + z);
+
+        foreach (var item in itemBoxs)
+        {
+            int myX = (int)item.myPos.x;
+            int myZ = (int)item.myPos.z;
+            Debug.Log("my : " + myX + ", " + myZ);
+            if (myX == x && myZ == z)
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+    */
 }
+
