@@ -22,12 +22,12 @@ public class SIGameManager : MonoBehaviour
     public GameObject carPrefab;
     public GameObject airplanePrefab;
 
-    Mover[] movers;
+    IMover[] movers;
 
 
     void Start()
     {
-        movers = new Mover[4];
+        movers = new IMover[4];
         movers[0] = CreateAirplane();
         movers[1] = CreateCar();
         movers[2] = CreateCar();
